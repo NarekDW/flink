@@ -18,7 +18,6 @@
 
 package org.apache.flink.test.util;
 
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.Utils;
@@ -75,14 +74,7 @@ public class DataSetUtilsITCase extends MultipleProgramsTestBase {
 
         Assert.assertEquals(expectedSize, result.size());
         // sort result by created index
-        Collections.sort(
-                result,
-                new Comparator<Tuple2<Long, Long>>() {
-                    @Override
-                    public int compare(Tuple2<Long, Long> o1, Tuple2<Long, Long> o2) {
-                        return o1.f0.compareTo(o2.f0);
-                    }
-                });
+        result.sort(Comparator.comparing(o -> o.f0));
         // test if index is consecutive
         for (int i = 0; i < expectedSize; i++) {
             Assert.assertEquals(i, result.get(i).f0.longValue());
@@ -95,16 +87,7 @@ public class DataSetUtilsITCase extends MultipleProgramsTestBase {
         long expectedSize = 100L;
         DataSet<Long> numbers = env.generateSequence(1L, expectedSize);
 
-        DataSet<Long> ids =
-                DataSetUtils.zipWithUniqueId(numbers)
-                        .map(
-                                new MapFunction<Tuple2<Long, Long>, Long>() {
-                                    @Override
-                                    public Long map(Tuple2<Long, Long> value) throws Exception {
-                                        return value.f0;
-                                    }
-                                });
-
+        DataSet<Long> ids = DataSetUtils.zipWithUniqueId(numbers).map(value -> value.f0);
         Set<Long> result = new HashSet<>(ids.collect());
 
         Assert.assertEquals(expectedSize, result.size());
